@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ListCraft AI — Etsy Listing Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+/* ── TOKENS ── */
+:root {
+  --cream: #FAF8F3;
+  --ink: #1A1A18;
+  --sage: #4E7B5C;
+  --sage-light: #EBF2ED;
+  --sage-mid: #C2D8C9;
+  --amber: #C07820;
+  --amber-light: #FDF3E3;
+  --border: #E4DFD6;
+  --muted: #8A867E;
+  --white: #FFFFFF;
+  --radius: 10px;
+  --danger: #C0392B;
+  --danger-light: #FEF0F0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:15px}
+
+/* ── SCREENS ── */
+.screen{display:none;animation:fadeIn .3s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ════════════════════════════════
+   PAYWALL SCREEN
+════════════════════════════════ */
+#screen-paywall{
+  min-height:100vh;
+  display:none;
+  flex-direction:column;
+}
+#screen-paywall.active{display:flex}
+
+.pw-hero{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:60px 24px 40px;
+  text-align:center;
+}
+.logo-mark{display:inline-flex;align-items:center;gap:9px;margin-bottom:28px}
+.logo-icon{
+  width:40px;height:40px;
+  background:var(--ink);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--cream);font-family:'Playfair Display',serif;
+  font-size:20px;font-weight:600;
+}
+.logo-text{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;letter-spacing:-.3px}
+
+.pw-hero h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(30px,5vw,52px);
+  font-weight:600;line-height:1.12;
+  letter-spacing:-.5px;
+  margin-bottom:16px;
+  max-width:560px;
+}
+.pw-hero h1 em{font-style:italic;color:var(--sage)}
+.pw-hero p{font-size:16px;color:var(--muted);font-weight:300;line-height:1.65;max-width:420px;margin:0 auto 40px}
+
+.pricing-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:32px 36px;
+  max-width:420px;
+  width:100%;
+  box-shadow:0 4px 32px rgba(26,26,24,.07);
+  margin-bottom:24px;
+}
+.price-row{
+  display:flex;align-items:baseline;gap:6px;
+  margin-bottom:6px;
+  justify-content:center;
+}
+.price-amount{font-family:'Playfair Display',serif;font-size:52px;font-weight:600;color:var(--ink);line-height:1}
+.price-period{font-size:16px;color:var(--muted);font-weight:300}
+.price-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px}
+
+.features{list-style:none;margin-bottom:28px;text-align:left}
+.features li{
+  display:flex;align-items:center;gap:10px;
+  font-size:14px;font-weight:300;color:var(--ink);
+  padding:7px 0;
+  border-bottom:1px solid var(--border);
+}
+.features li:last-child{border-bottom:none}
+.feat-check{
+  width:20px;height:20px;flex-shrink:0;
+  background:var(--sage-light);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.feat-check svg{width:10px;height:10px}
+
+.stripe-btn{
+  display:block;width:100%;
+  font-family:'DM Sans',sans-serif;
+  font-size:16px;font-weight:500;
+  padding:15px;
+  background:var(--ink);color:var(--cream);
+  border:none;border-radius:var(--radius);
+  cursor:pointer;text-align:center;
+  text-decoration:none;
+  transition:background .15s,transform .1s;
+  margin-bottom:12px;
+}
+.stripe-btn:hover{background:#2E2E2A}
+.stripe-btn:active{transform:scale(.995)}
+
+.pw-divider{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:12px;
+  font-size:12px;color:var(--muted);
+}
+.pw-divider::before,.pw-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.access-row{display:flex;gap:8px}
+.access-input{
+  flex:1;font-family:'DM Sans',sans-serif;
+  font-size:14px;padding:10px 14px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--cream);color:var(--ink);outline:none;
+  transition:border-color .15s;
+}
+.access-input:focus{border-color:var(--sage);background:var(--white)}
+.access-btn{
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
+  padding:10px 18px;
+  background:var(--sage);color:var(--white);
+  border:none;border-radius:var(--radius);cursor:pointer;
+  white-space:nowrap;transition:background .15s;
+}
+.access-btn:hover{background:#3D6349}
+.access-msg{font-size:12px;margin-top:8px;padding:7px 10px;border-radius:6px;display:none}
+.access-msg.err{background:var(--danger-light);color:var(--danger);display:block}
+.access-msg.ok{background:var(--sage-light);color:var(--sage);display:block}
+
+.pw-note{font-size:12px;color:var(--muted);text-align:center;line-height:1.6;max-width:380px}
+.pw-note a{color:var(--muted)}
+
+/* ════════════════════════════════
+   APP SCREEN
+════════════════════════════════ */
+#api-banner{
+  background:var(--amber-light);
+  border-bottom:1px solid #EDD4A0;
+  padding:11px 20px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.banner-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
+#api-banner p{font-size:12px;color:#7A5010;flex:1}
+#api-banner input{
+  font-family:'DM Sans',sans-serif;font-size:12px;
+  padding:6px 11px;border:1px solid #EDD4A0;border-radius:6px;
+  background:var(--white);color:var(--ink);width:260px;outline:none;
+}
+#api-banner input:focus{border-color:var(--amber)}
+.banner-btn{
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;
+  padding:6px 14px;background:var(--amber);color:var(--white);
+  border:none;border-radius:6px;cursor:pointer;
+}
+.banner-btn:hover{background:#A5641A}
+#key-ok{font-size:12px;color:var(--sage);font-weight:500;display:none}
+
+.app-header{
+  max-width:740px;margin:0 auto;
+  padding:44px 24px 24px;text-align:center;
+}
+.app-header h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(26px,4vw,40px);
+  font-weight:600;letter-spacing:-.4px;
+  margin-bottom:8px;line-height:1.2;
+}
+.app-header h1 em{font-style:italic;color:var(--sage)}
+.app-header p{font-size:14px;color:var(--muted);font-weight:300}
+
+.member-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--sage-light);border:1px solid var(--sage-mid);
+  border-radius:20px;padding:5px 14px;
+  font-size:12px;color:var(--sage);font-weight:500;
+  margin-bottom:16px;
+}
+
+main{max-width:740px;margin:0 auto;padding:0 24px 80px}
+.form-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:16px;padding:28px;
+  box-shadow:0 2px 16px rgba(26,26,24,.06);
+}
+.section-label{
+  font-size:11px;font-weight:500;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:14px;
+}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:500;color:var(--ink);margin-bottom:5px}
+.field label span{color:var(--muted);font-weight:400}
+.field input,.field textarea,.field select{
+  width:100%;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:300;color:var(--ink);
+  background:var(--cream);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 13px;outline:none;
+  transition:border-color .15s;appearance:none;
+}
+.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:var(--sage);background:var(--white);
+}
+.field textarea{resize:vertical;min-height:75px;line-height:1.55}
+.field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A867E' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+hr{border:none;border-top:1px solid var(--border);margin:22px 0}
+.gen-btn{
+  width:100%;font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:500;padding:14px;
+  background:var(--ink);color:var(--cream);
+  border:none;border-radius:var(--radius);cursor:pointer;
+  transition:background .15s,transform .1s;
+}
+.gen-btn:hover{background:#2E2E2A}
+.gen-btn:active{transform:scale(.995)}
+.gen-btn:disabled{background:#B8B4AC;cursor:not-allowed;transform:none}
+#status{
+  margin-top:14px;font-size:13px;padding:10px 13px;
+  border-radius:var(--radius);display:none;
+}
+#status.loading{background:var(--sage-light);color:var(--sage);display:block}
+#status.error{background:var(--danger-light);color:var(--danger);display:block;word-break:break-word}
+
+/* output */
+#output{margin-top:26px;display:none}
+#output.visible{display:block}
+.out-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.out-header h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:600}
+.ready-badge{
+  background:var(--sage-light);color:var(--sage);
+  font-size:11px;font-weight:500;
+  padding:4px 12px;border-radius:20px;letter-spacing:.04em;
+}
+.out-block{margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.out-block-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:9px 13px;background:var(--cream);border-bottom:1px solid var(--border);
+}
+.out-lbl{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cp-btn{
+  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;
+  padding:3px 9px;background:var(--white);color:var(--muted);
+  border:1px solid var(--border);border-radius:5px;cursor:pointer;
+  transition:color .1s,border-color .1s;
+}
+.cp-btn:hover{color:var(--ink);border-color:var(--ink)}
+.out-body{
+  padding:13px;font-size:14px;font-weight:300;
+  line-height:1.7;color:var(--ink);background:var(--white);white-space:pre-line;
+}
+.tags-wrap{padding:13px;background:var(--white);display:flex;flex-wrap:wrap;gap:6px}
+.tag{
+  background:var(--sage-light);color:var(--sage);
+  font-size:12px;padding:4px 11px;border-radius:20px;
+  border:1px solid var(--sage-mid);
+}
+.tip-block{
+  background:var(--amber-light);border:1px solid #EDD4A0;
+  border-radius:var(--radius);padding:13px 15px;
+}
+.tip-lbl{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:5px}
+.tip-text{font-size:13px;color:#7A5010;font-weight:300;line-height:1.6}
+
+footer{
+  text-align:center;padding:28px 24px;
+  font-size:12px;color:var(--muted);
+  border-top:1px solid var(--border);margin-top:40px;
+}
+
+@media(max-width:520px){
+  .row2{grid-template-columns:1fr}
+  .form-card{padding:18px}
+  .pricing-card{padding:24px 20px}
+  .access-row{flex-direction:column}
+  .app-header{padding:30px 16px 18px}
+  #api-banner input{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════
+     SCREEN 1: PAYWALL
+══════════════════════════════ -->
+<div id="screen-paywall" class="screen active">
+  <div class="pw-hero">
+
+    <div class="logo-mark">
+      <div class="logo-icon">L</div>
+      <span class="logo-text">ListCraft AI</span>
+    </div>
+
+    <h1>Write better listings.<br><em>Sell more on Etsy.</em></h1>
+    <p>SEO-optimized titles, descriptions, and 13 tags generated in seconds. Built for Etsy sellers who want to be found.</p>
+
+    <div class="pricing-card">
+      <div class="price-row">
+        <span class="price-amount">$12</span>
+        <span class="price-period">/ month</span>
+      </div>
+      <div class="price-sub">Unlimited listings · Cancel anytime</div>
+
+      <ul class="features">
+        <li>
+          <span class="feat-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#4E7B5C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          AI-generated SEO title (140 chars, keywords first)
+        </li>
+        <li>
+          <span class="feat-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#4E7B5C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          3-paragraph buyer-focused description
+        </li>
+        <li>
+          <span class="feat-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#4E7B5C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          13 optimized Etsy search tags
+        </li>
+        <li>
+          <span class="feat-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#4E7B5C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Niche-specific SEO tip per listing
+        </li>
+        <li>
+          <span class="feat-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#4E7B5C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          One-click copy for every section
+        </li>
+      </ul>
+
+      <!-- REPLACE href BELOW WITH YOUR STRIPE PAYMENT LINK -->
+      <a class="stripe-btn" href="https://buy.stripe.com/00w3co3cg5ih3Nv0F3bZe01" target="_blank" id="stripe-link">
+        Subscribe for $12/month →
+      </a>
+
+      <div class="pw-divider">Already subscribed?</div>
+
+      <div class="access-row">
+        <input class="access-input" type="text" id="access-code" placeholder="Enter your access code" autocomplete="off" />
+        <button class="access-btn" onclick="checkCode()">Unlock</button>
+      </div>
+      <div class="access-msg" id="access-msg"></div>
+    </div>
+
+    <p class="pw-note">
+      After subscribing, you'll receive an access code by email within a few hours.<br>
+      Questions? <a href="/cdn-cgi/l/email-protection#5e07110b0c011b131f171201161b0c1b">Contact support</a>
+    </p>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 2: APP
+══════════════════════════════ -->
+<div id="screen-app" class="screen">
+
+  <!-- API Key banner (owner only) -->
+  <div id="api-banner">
+    <div class="banner-dot"></div>
+    <p>Owner setup — paste your Anthropic API key:</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" />
+    <button class="banner-btn" onclick="saveKey()">Save key</button>
+    <span id="key-ok">✓ Active</span>
+  </div>
+
+  <div class="app-header">
+    <div class="logo-mark">
+      <div class="logo-icon">L</div>
+      <span class="logo-text">ListCraft AI</span>
+    </div>
+    <div class="member-badge">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#4E7B5C" stroke-width="1.2"/><path d="M3 5l1.5 1.5L7 3.5" stroke="#4E7B5C" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Member access
+    </div>
+    <h1>Create your <em>perfect</em> listing</h1>
+    <p>Fill in your product details below — your optimized listing is ready in seconds.</p>
+  </div>
+
+  <main>
+    <div class="form-card">
+      <div class="section-label">Product details</div>
+
+      <div class="field">
+        <label>Product name <span>*</span></label>
+        <input type="text" id="pname" placeholder="e.g. Hand-poured lavender soy candle" />
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Category</label>
+          <select id="cat">
+            <option>Home & Living</option><option>Jewelry</option>
+            <option>Clothing</option><option>Art & Prints</option>
+            <option>Toys & Games</option><option>Craft Supplies</option>
+            <option>Weddings</option><option>Pet Supplies</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Price range</label>
+          <select id="price">
+            <option>Under $15</option><option>$15–$30</option>
+            <option>$30–$60</option><option>$60–$100</option><option>$100+</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Materials & key features <span>*</span></label>
+        <textarea id="feats" placeholder="e.g. 100% soy wax, cotton wick, 50hr burn time, kraft gift box, lavender & eucalyptus scent"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Target buyer <span>(optional)</span></label>
+        <input type="text" id="buyer" placeholder="e.g. gift for mom, self-care lovers, minimalist decor fans" />
+      </div>
+
+      <hr />
+      <button class="gen-btn" id="genBtn" onclick="generate()">Generate my Etsy listing →</button>
+      <div id="status"></div>
+    </div>
+
+    <div id="output">
+      <div class="out-header">
+        <h2>Your listing</h2>
+        <span class="ready-badge">Ready to copy</span>
+      </div>
+
+      <div class="out-block">
+        <div class="out-block-head">
+          <span class="out-lbl">Title</span>
+          <button class="cp-btn" onclick="cp('title-out',this)">Copy</button>
+        </div>
+        <div class="out-body" id="title-out"></div>
+      </div>
+
+      <div class="out-block">
+        <div class="out-block-head">
+          <span class="out-lbl">Description</span>
+          <button class="cp-btn" onclick="cp('desc-out',this)">Copy</button>
+        </div>
+        <div class="out-body" id="desc-out"></div>
+      </div>
+
+      <div class="out-block">
+        <div class="out-block-head">
+          <span class="out-lbl">SEO Tags <span id="tag-count"></span></span>
+          <button class="cp-btn" onclick="cpTags(this)">Copy all</button>
+        </div>
+        <div class="tags-wrap" id="tags-out"></div>
+      </div>
+
+      <div class="tip-block">
+        <div class="tip-lbl">Pro tip</div>
+        <div class="tip-text" id="tip-out"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    ListCraft AI &mdash; $12/month &mdash; <a href="#" onclick="logout()" style="color:var(--muted)">Log out</a>
+  </footer>
+
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── CONFIG ──────────────────────────────────────────────
+// REPLACE THIS with whatever access codes you want to give subscribers.
+// Each subscriber you email a code from this list.
+// Add more as you get more customers. Keep this secret.
+const VALID_CODES = [
+  'LISTCRAFT-001',
+  'LISTCRAFT-002',
+  'LISTCRAFT-003',
+  'LISTCRAFT-004',
+  'LISTCRAFT-005',
+  'LISTCRAFT-BETA'
+];
+// ────────────────────────────────────────────────────────
+
+let API_KEY = localStorage.getItem('lc_key') || '';
+
+function init() {
+  const unlocked = localStorage.getItem('lc_unlocked') === 'true';
+  if (unlocked) showApp();
+  else showPaywall();
+  if (API_KEY) {
+    document.getElementById('key-ok').style.display = 'inline';
+    document.getElementById('api-banner').style.display = 'none';
+  }
+}
+
+function showPaywall() {
+  document.getElementById('screen-paywall').classList.add('active');
+  document.getElementById('screen-app').classList.remove('active');
+}
+
+function showApp() {
+  document.getElementById('screen-paywall').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+}
+
+function checkCode() {
+  const code = document.getElementById('access-code').value.trim().toUpperCase();
+  const msg  = document.getElementById('access-msg');
+  if (!code) { msg.textContent = 'Please enter your access code.'; msg.className = 'access-msg err'; return; }
+  if (VALID_CODES.includes(code)) {
+    localStorage.setItem('lc_unlocked', 'true');
+    msg.textContent = 'Access granted! Loading your workspace...';
+    msg.className = 'access-msg ok';
+    setTimeout(showApp, 900);
+  } else {
+    msg.textContent = 'Invalid code. Check your email or contact support.';
+    msg.className = 'access-msg err';
+  }
+}
+
+document.getElementById('access-code').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkCode();
+});
+
+function logout() {
+  localStorage.removeItem('lc_unlocked');
+  showPaywall();
+}
+
+function saveKey() {
+  const v = document.getElementById('api-key-input').value.trim();
+  if (!v) return;
+  API_KEY = v;
+  localStorage.setItem('lc_key', v);
+  document.getElementById('key-ok').style.display = 'inline';
+  document.getElementById('api-banner').style.display = 'none';
+}
+
+// ── GENERATOR ───────────────────────────────────────────
+async function generate() {
+  const name  = document.getElementById('pname').value.trim();
+  const cat   = document.getElementById('cat').value;
+  const price = document.getElementById('price').value;
+  const feats = document.getElementById('feats').value.trim();
+  const buyer = document.getElementById('buyer').value.trim();
+  const btn   = document.getElementById('genBtn');
+  const statusEl = document.getElementById('status');
+  const outputEl = document.getElementById('output');
+
+  statusEl.className = ''; statusEl.style.display = 'none';
+  outputEl.classList.remove('visible');
+
+  if (!API_KEY) {
+    statusEl.textContent = 'Owner: please enter your Anthropic API key in the banner above.';
+    statusEl.className = 'error'; return;
+  }
+  if (!name)  { statusEl.textContent = 'Please enter a product name.'; statusEl.className = 'error'; return; }
+  if (!feats) { statusEl.textContent = 'Please describe your materials and features.'; statusEl.className = 'error'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Writing your listing...';
+  statusEl.textContent = 'Generating — usually 5–10 seconds...';
+  statusEl.className = 'loading';
+
+  const prompt = `You are an expert Etsy SEO copywriter. Generate an optimized Etsy listing.
+
+Product: ${name}
+Category: ${cat}
+Price: ${price}
+Features: ${feats}
+${buyer ? 'Target buyer: ' + buyer : ''}
+
+Reply ONLY with raw JSON, no markdown, no backticks:
+{"title":"SEO title under 140 chars, strongest keywords first","description":"3 paragraphs 130-180 words. Para 1: emotional hook. Para 2: materials and features. Para 3: gifting or occasion.","tags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8","tag9","tag10","tag11","tag12","tag13"],"tip":"One specific actionable SEO tip for this product type"}
+
+Tags: exactly 13, each under 20 chars, no repeated words, real Etsy search phrases only.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error('API ' + res.status + ': ' + t.slice(0,200));
+    }
+
+    const data = await res.json();
+    const raw  = (data.content||[]).map(i=>i.text||'').join('').trim();
+    if (!raw) throw new Error('Empty response.');
+
+    let result;
+    try { result = JSON.parse(raw); }
+    catch {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) result = JSON.parse(m[0]);
+      else throw new Error('Parse failed: ' + raw.slice(0,200));
+    }
+
+    document.getElementById('title-out').textContent = result.title || '';
+    document.getElementById('desc-out').textContent  = result.description || '';
+    document.getElementById('tip-out').textContent   = result.tip || '';
+    const tags = result.tags || [];
+    document.getElementById('tag-count').textContent = '(' + tags.length + '/13)';
+    document.getElementById('tags-out').innerHTML = tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+
+    statusEl.className = ''; statusEl.style.display = 'none';
+    outputEl.classList.add('visible');
+    outputEl.scrollIntoView({behavior:'smooth',block:'start'});
+
+  } catch(e) {
+    statusEl.textContent = 'Error: ' + e.message;
+    statusEl.className = 'error';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Generate my Etsy listing →';
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function cp(id,btn){
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{
+    btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+function cpTags(btn){
+  const t=[...document.querySelectorAll('#tags-out .tag')].map(x=>x.textContent).join(', ');
+  navigator.clipboard.w
